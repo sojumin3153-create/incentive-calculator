@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>연구인센티브 계산기</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Apple SD Gothic Neo', '맑은 고딕', sans-serif;
+      background: #f0f4f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1a202c;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #718096;
+      margin-bottom: 32px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 8px;
+    }
+
+    .type-buttons {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .type-btn {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      background: white;
+      font-size: 15px;
+      font-weight: 600;
+      color: #718096;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .type-btn.active {
+      border-color: #4f46e5;
+      background: #eef2ff;
+      color: #4f46e5;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 16px;
+      color: #2d3748;
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 8px;
+    }
+
+    input[type="number"]:focus {
+      border-color: #4f46e5;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #a0aec0;
+      margin-bottom: 24px;
+    }
+
+    button.calc-btn {
+      width: 100%;
+      padding: 14px;
+      background: #4f46e5;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button.calc-btn:hover {
+      background: #4338ca;
+    }
+
+    .result {
+      margin-top: 28px;
+      background: #f7f8fc;
+      border-radius: 12px;
+      padding: 24px;
+      display: none;
+    }
+
+    .result.show { display: block; }
+
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      color: #4a5568;
+      padding: 6px 0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .result-row:last-child { border-bottom: none; }
+
+    .result-row span:last-child { font-weight: 600; }
+
+    .result-final {
+      margin-top: 16px;
+      text-align: center;
+    }
+
+    .result-final .label {
+      font-size: 13px;
+      color: #718096;
+      margin-bottom: 4px;
+    }
+
+    .result-final .amount {
+      font-size: 32px;
+      font-weight: 800;
+      color: #4f46e5;
+    }
+
+    .grade-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #eef2ff;
+      color: #4f46e5;
+    }
+
+    .error {
+      color: #e53e3e;
+      font-size: 13px;
+      margin-top: 6px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>연구인센티브 계산기</h1>
+    <p class="subtitle">p값(100 - JIF percentile)을 입력하면 최종 지급액을 계산합니다</p>
+
+    <label>논문 종류</label>
+    <div class="type-buttons">
+      <button class="type-btn active" onclick="selectType('SSCI', this)">SSCI</button>
+      <button class="type-btn" onclick="selectType('SCIE', this)">SCI(E)</button>
+    </div>
+
+    <label>p값 입력</label>
+    <input type="number" id="pInput" placeholder="예: 25" min="1" max="100" step="0.01">
+    <p class="hint">p = 100 - JIF percentile  (입력 범위: 1 ~ 100)</p>
+    <p class="error" id="errorMsg">p값은 1~100 사이의 숫자를 입력하세요.</p>
+
+    <button class="calc-btn" onclick="calculate()">계산하기</button>
+
+    <div class="result" id="result">
+      <div class="result-row">
+        <span>논문 종류</span>
+        <span id="r-type"></span>
+      </div>
+      <div class="result-row">
+        <span>p값</span>
+        <span id="r-p"></span>
+      </div>
+      <div class="result-row">
+        <span>등급</span>
+        <span id="r-grade"></span>
+      </div>
+      <div class="result-row">
+        <span>지급 기준액</span>
+        <span id="r-base"></span>
+      </div>
+      <div class="result-row">
+        <span>정규화 N값</span>
+        <span id="r-n"></span>
+      </div>
+      <div class="result-row">
+        <span>감액</span>
+        <span id="r-deduction"></span>
+      </div>
+      <div class="result-final">
+        <div class="label">최종 지급액</div>
+        <div class="amount" id="r-final"></div>
+      </div>
+      <p style="margin-top:16px; font-size:12px; color:#a0aec0; text-align:center; line-height:1.6;">
+        ※ 해당 지급액은 저자 인정율 및 사사 구분에 따른 감액 적용 전 금액임
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let selectedType = 'SSCI';
+
+    function selectType(type, btn) {
+      selectedType = type;
+      document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function fmt(n) {
+      return n.toLocaleString('ko-KR') + '원';
+    }
+
+    function calculate() {
+      const p = parseFloat(document.getElementById('pInput').value);
+      const errorEl = document.getElementById('errorMsg');
+
+      if (isNaN(p) || p < 1 || p > 100) {
+        errorEl.style.display = 'block';
+        document.getElementById('result').classList.remove('show');
+        return;
+      }
+      errorEl.style.display = 'none';
+
+      const isSCI = selectedType === 'SCIE';
+      let grade, pMin, pMax, base, maxDeduction;
+
+      if (p <= 10) {
+        grade = '1등급(A)';
+        pMin = 1; pMax = 10;
+        base = isSCI ? 10_000_000 : 15_000_000;
+      } else if (p <= 30) {
+        grade = '2등급(B)';
+        pMin = 10; pMax = 30;
+        base = isSCI ? 6_000_000 : 8_000_000;
+      } else if (p <= 50) {
+        grade = '3등급(C)';
+        pMin = 30; pMax = 50;
+        base = isSCI ? 3_000_000 : 4_000_000;
+      } else {
+        grade = '4등급(D)';
+        pMin = 50; pMax = 100;
+        base = isSCI ? 2_500_000 : 3_000_000;
+      }
+
+      maxDeduction = isSCI ? 1_000_000 : 1_500_000;
+
+      const N         = (p - pMin) / (pMax - pMin);
+      const deduction = maxDeduction * N;
+      const final     = base - deduction;
+
+      document.getElementById('r-type').textContent       = selectedType === 'SCIE' ? 'SCI(E)' : 'SSCI';
+      document.getElementById('r-p').textContent          = p;
+      document.getElementById('r-grade').innerHTML        = `<span class="grade-badge">${grade}</span>`;
+      document.getElementById('r-base').textContent       = fmt(base);
+      document.getElementById('r-n').textContent          = N.toFixed(4);
+      document.getElementById('r-deduction').textContent  = fmt(Math.round(deduction));
+      document.getElementById('r-final').textContent      = fmt(Math.round(final));
+
+      document.getElementById('result').classList.add('show');
+    }
+
+    document.getElementById('pInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') calculate();
+    });
+  </script>
+</body>
+</html>
